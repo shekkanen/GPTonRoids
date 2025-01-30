@@ -1,0 +1,16 @@
+wheel
+fastapi
+uvicorn
+python-dotenv
+gtts
+pysoundfile
+pydantic
+simpleaudio
+pydub
+ffmpeg
+pyautogui
+pyscreeze
+Pillow
+python-multipart
+PyGithub
+requests

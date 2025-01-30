@@ -1,0 +1,16 @@
+pytest
+fastapi<0.116.0,>=0.115.0
+starlette<0.42.0,>=0.40.0
+requests
+pydantic<2.11.0
+gtts
+pydub
+simpleaudio
+pyautogui
+PyGithub
+httpx>=0.21.0
+python-multipart
+python-dotenv
+pytest-mock
+groq
+
