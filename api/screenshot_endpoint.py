@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
 import pyautogui
 import uuid
-from prod.config import TMP_DIR, get_api_key, logger
+from api.config import TMP_DIR, get_api_key, logger
 
 router = APIRouter()
 

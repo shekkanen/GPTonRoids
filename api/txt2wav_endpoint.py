@@ -8,7 +8,7 @@ import simpleaudio as sa
 import logging
 
 # Import logger, TMP_DIR, get_api_key from the config file
-from prod.config import logger, TMP_DIR, get_api_key
+from api.config import logger, TMP_DIR, get_api_key
 
 router = APIRouter()
 

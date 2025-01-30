@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pathlib import Path
-from prod.config import TMP_DIR, get_api_key, logger
+from api.config import TMP_DIR, get_api_key, logger
 
 router = APIRouter()
 

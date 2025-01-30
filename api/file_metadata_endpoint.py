@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
 import os
 import time
-from prod.config import BASE_DIR, get_api_key, logger
+from api.config import BASE_DIR, get_api_key, logger
 
 router = APIRouter()
 

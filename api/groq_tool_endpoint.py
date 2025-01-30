@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import logging
 
 # Import logger, get_api_key from the main server file
-from prod.config import logger, get_api_key
+from api.config import logger, get_api_key
 
 router = APIRouter()
 

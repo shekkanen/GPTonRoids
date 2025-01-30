@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from prod.github_repo_endpoint import router
+from api.github_repo_endpoint import router
 
 client = TestClient(router)
 

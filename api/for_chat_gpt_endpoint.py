@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 import gzip
 import json
-from prod.config import logger, BASE_DIR, get_api_key
+from api.config import logger, BASE_DIR, get_api_key
 
 router = APIRouter()
 

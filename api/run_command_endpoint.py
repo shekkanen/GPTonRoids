@@ -3,8 +3,7 @@ from pydantic import BaseModel
 import subprocess
 import logging
 import shlex
-from prod.config import logger, BASE_DIR, get_api_key
-from prod.run_aijudge_signal_flow_endpoint import run_aijudge_signal_flow
+from api.config import logger, BASE_DIR, get_api_key
 
 router = APIRouter()
 

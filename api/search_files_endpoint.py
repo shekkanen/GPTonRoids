@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
-from prod.config import BASE_DIR, get_api_key, logger
+from api.config import BASE_DIR, get_api_key, logger
 import os
-from prod.config import BaseModel
+from api.config import BaseModel
 
 class FileSearchRequest(BaseModel):
     query: str

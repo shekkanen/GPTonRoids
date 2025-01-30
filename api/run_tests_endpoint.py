@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 import subprocess
 import logging
-from prod.config import logger, BASE_DIR, get_api_key
+from api.config import logger, BASE_DIR, get_api_key
 
 router = APIRouter()
 
