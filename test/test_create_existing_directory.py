@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import pytest
 from fastapi.testclient import TestClient
-from dev.server import app
+from api.server import app
 
 # Load environment variables from .env
 load_dotenv()

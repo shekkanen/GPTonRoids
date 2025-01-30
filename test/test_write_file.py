@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from dev.server import app
+from api.server import app
 import os
 
 client = TestClient(app)
@@ -12,45 +12,64 @@ def setup_env():
     del os.environ["API_KEY"]
 
 def test_write_new_file():
-    response = client.post(
-        "/files",
+    response = client.put(
+        "/files/new_test_file.txt",
         headers={"x-api-key": "test_api_key"},
-        json={"filename": "new_test_file.txt", "content": "This is a new file."}
+        json={"content": "This is a new file."}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     assert response.json()["message"] == "File written successfully"
 
-def test_write_existing_file_with_diff():
+def test_write_existing_file():
     # Create the initial file
-    client.post(
-        "/files",
+    client.put(
+        "/files/existing_test_file.txt",
         headers={"x-api-key": "test_api_key"},
-        json={"filename": "existing_test_file.txt", "content": "Original content."}
+        json={"content": "Original content."}
     )
     # Attempt to overwrite with different content
-    response = client.post(
-        "/files",
+    response = client.put(
+        "/files/existing_test_file.txt",
         headers={"x-api-key": "test_api_key"},
-        json={"filename": "existing_test_file.txt", "content": "Updated content."}
+        json={"content": "Updated content."}
     )
-    if response.status_code == 400:  # Rejected by AIJudge
-        assert "Changes rejected by AIJudge" in response.json()["message"]
-    else:  # Approved by AIJudge
-        assert response.status_code == 201
-        assert response.json()["message"] == "File written successfully"
+    assert response.status_code == 200
+    assert response.json()["message"] == "File written successfully"
 
-def test_ai_judge_rejects_write():
-    # Create the initial file with important lines
-    client.post(
-        "/files",
+def test_append_to_file():
+        # Create the initial file
+    client.put(
+        "/files/append_test_file.txt",
         headers={"x-api-key": "test_api_key"},
-        json={"filename": "critical_file.txt", "content": "Important line 1\nImportant line 2"}
+        json={"content": "Initial content. "}
     )
-    # Attempt to overwrite with destructive content
     response = client.post(
-        "/files",
+        "/files/append_test_file.txt/append",
         headers={"x-api-key": "test_api_key"},
-        json={"filename": "critical_file.txt", "content": "New line 1\nNew line 2"}
+        json={"content": "Appended content."}
     )
-    assert response.status_code == 400
-    assert "Changes rejected by AIJudge" in response.json()["message"]
+    assert response.status_code == 200
+    assert response.json()["message"] == "Content appended to 'append_test_file.txt' successfully"
+
+    response = client.get("/files/append_test_file.txt", headers={"x-api-key": "test_api_key"})
+    assert response.status_code == 200
+    assert response.json() == "Initial content. Appended content."
+
+def test_append_lines_to_file():
+    # Create the initial file
+    client.put(
+        "/files/lines_test_file.txt",
+        headers={"x-api-key": "test_api_key"},
+        json={"content": "Initial content.\n"}
+    )
+    response = client.post(
+            "/files/lines_test_file.txt/lines",
+            headers={"x-api-key": "test_api_key"},
+            json={"lines": ["Line 1", "Line 2"]}
+        )
+    assert response.status_code == 200
+    assert response.json()["message"] == "Lines appended to 'lines_test_file.txt' successfully"
+
+    response = client.get("/files/lines_test_file.txt", headers={"x-api-key": "test_api_key"})
+    assert response.status_code == 200
+    assert response.json() == "Initial content.\nLine 1\nLine 2\n"
