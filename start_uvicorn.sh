@@ -7,4 +7,6 @@ if [ -n "$NGROK_URL" ]; then
 fi
 
 source venv/bin/activate
-uvicorn api.server:app --reload 2>&1 | tee -a logs/uvicorn.log
+uvicorn api.server:app \
+    --reload \
+    2>&1 | tee -a logs/uvicorn.log
