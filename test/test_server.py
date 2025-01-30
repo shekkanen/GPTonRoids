@@ -52,9 +52,9 @@ def test_get_github_repo_info():
     assert response.json() == mock_repo_info
 
 def test_list_files():
-    response = client.get("/files", headers={"x-api-key": "test_api_key"})
+    response = client.get("/directories/", headers={"x-api-key": "test_api_key"})
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert isinstance(response.json()["files"], list)
 
 def test_write_file():
     response = client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"x-api-key": "test_api_key"})
@@ -85,6 +85,10 @@ def test_delete_directory():
     assert response.json() == {"message": "Directory 'test_dir' deleted successfully"}
 
 def test_run_command():
-    response = client.post("/run-command", json={"command": "echo Hello"}, headers={"x-api-key": "test_api_key"})
+    response = client.post(
+        "/run-command",
+        json={"command": "echo Hello", "plan": "testing"},
+        headers={"x-api-key": "test_api_key"}
+    )
     assert response.status_code == 200
     assert response.json()["stdout"] == "Hello"

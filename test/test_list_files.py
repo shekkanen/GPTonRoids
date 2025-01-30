@@ -13,6 +13,6 @@ def setup_env():
     del os.environ["API_KEY"]
 
 def test_list_files():
-    response = client.get("/files", headers={"x-api-key": "test_api_key"})
+    response = client.get("/directories/", headers={"x-api-key": "test_api_key"})
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert isinstance(response.json()["files"], list)
