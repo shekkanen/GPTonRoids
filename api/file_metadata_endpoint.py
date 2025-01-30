@@ -1,7 +1,8 @@
+# /home/sami/sorsat/GPTonRoids/api/file_metadata_endpoint.py
 from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
 import os
-import time
+from datetime import datetime
 from api.config import BASE_DIR, get_api_key, logger
 
 router = APIRouter()
@@ -10,12 +11,13 @@ router = APIRouter()
 def get_file_metadata(filename: str):
     file_path = BASE_DIR / filename
     if not file_path.exists():
+        logger.error(f"File not found: {filename}")
         raise HTTPException(status_code=404, detail="File not found")
     
     stat_info = os.stat(file_path)
     return {
         "filename": filename,
         "size": stat_info.st_size,
-        "created": time.ctime(stat_info.st_ctime),
-        "modified": time.ctime(stat_info.st_mtime)
+        "created": datetime.fromtimestamp(stat_info.st_ctime).isoformat(),
+        "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat()
     }

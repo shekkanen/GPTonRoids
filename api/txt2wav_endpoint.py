@@ -1,3 +1,4 @@
+# /home/sami/sorsat/GPTonRoids/api/txt2wav_endpoint.py
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import uuid
@@ -6,8 +7,7 @@ from gtts import gTTS
 from pydub import AudioSegment
 import simpleaudio as sa
 import logging
-
-# Import logger, TMP_DIR, get_api_key from the config file
+from threading import Thread
 from api.config import logger, TMP_DIR, get_api_key
 
 router = APIRouter()
@@ -15,11 +15,19 @@ router = APIRouter()
 class TxtToWavRequest(BaseModel):
     text: str
 
+def play_audio(wav_path: str):
+    try:
+        wave_obj = sa.WaveObject.from_wave_file(wav_path)
+        play_obj = wave_obj.play()
+        play_obj.wait_done()
+    except Exception as e:
+        logger.error(f"Audio playback failed: {str(e)}", exc_info=True)
+
 @router.post("/txt2wav", dependencies=[Depends(get_api_key)])
 def txt2wav(request: TxtToWavRequest):
     """
     Converts the provided text into a WAV audio file using gTTS (Google Text-to-Speech).
-    Saves the resulting file into the tmp folder.
+    Saves the resulting file into the tmp folder and plays it in the background.
     """
     logger.info(f"Converting text to wav: {request.text}")
     try:
@@ -38,10 +46,9 @@ def txt2wav(request: TxtToWavRequest):
         # Delete the temporary MP3 file
         os.remove(mp3_filename)
 
-        # Play the generated WAV file
-        wave_obj = sa.WaveObject.from_wave_file(str(wav_filename))
-        play_obj = wave_obj.play()
-        play_obj.wait_done()
+        # Play the generated WAV file in a background thread
+        thread = Thread(target=play_audio, args=(str(wav_filename),))
+        thread.start()
 
         return {"filename": str(wav_filename)}
     except Exception as e:

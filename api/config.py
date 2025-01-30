@@ -13,12 +13,16 @@ BASE_DIR = Path(BASE_DIR)
 TMP_DIR = BASE_DIR / "tmp"
 TMP_DIR.mkdir(parents=True, exist_ok=True)
 
+# Logs directory setup
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
 # Logger setup
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(BASE_DIR / "logs" / "server.log"),
+        logging.FileHandler(LOGS_DIR / "server.log"),
         logging.StreamHandler()
     ]
 )
