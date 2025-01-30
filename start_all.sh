@@ -22,6 +22,10 @@ else
     exit 1
 fi
 
+echo "*******************************************************************************"
+echo "Paste this to GPT Actions import URL field: $NGROK_URL/openapi.json"
+echo "*******************************************************************************"
+
 echo "Starting FastAPI application with Uvicorn..."
 # Start FastAPI using Uvicorn
 ./start_uvicorn.sh
