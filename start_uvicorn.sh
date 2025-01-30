@@ -1,4 +1,10 @@
+#!/bin/bash
 source .env
-source venv/bin/activate
-uvicorn api.server:app --reload >> logs/uvicorn.log 2>&1
 
+# Export NGROK_URL if set
+if [ -n "$NGROK_URL" ]; then
+    export NGROK_URL
+fi
+
+source venv/bin/activate
+uvicorn api.server:app --reload 2>&1 | tee -a logs/uvicorn.log
