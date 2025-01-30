@@ -3,57 +3,65 @@ from pydantic import BaseModel
 import subprocess
 import logging
 import shlex
+import shutil
+import traceback
 from api.config import logger, BASE_DIR, get_api_key
 
 router = APIRouter()
 
 class RunCommandRequest(BaseModel):
     command: str
-    plan: str
+    plan: str  # Kept for compatibility, can be used for logging future actions
 
 # Define allowed commands (whitelist)
-safe_commands = {"ls", "pwd", "uname", "echo", "cat", "hostname", "git"}
+SAFE_COMMANDS = {"ls", "pwd", "uname", "echo", "cat", "hostname", "git"}
 
 @router.post("/run-command", dependencies=[Depends(get_api_key)])
 async def run_command(request: RunCommandRequest):
-    logger.info(f"Processing command: {request.command}")
+    """
+    Securely executes whitelisted shell commands and returns the result.
+    """
+    logger.info(f"Received command request: {request.command}")
 
     try:
+        # Parse the command safely
         command_parts = shlex.split(request.command)
-    except ValueError as e:
-        logger.warning(f"Invalid command format: {request.command}")
-        raise HTTPException(status_code=400, detail=f"Invalid command format: {str(e)}")
 
-    if not command_parts:
-        raise HTTPException(status_code=400, detail="No command provided.")
+        if not command_parts:
+            raise HTTPException(status_code=400, detail="No command provided.")
 
-    # Only use the whitelist for security and remove the need for AIJudge
-    if command_parts[0] not in safe_commands:
-        logger.warning(f"Command not in whitelist: {command_parts[0]}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Command '{command_parts[0]}' is not allowed."
-        )
+        # Validate the command against the whitelist
+        cmd = command_parts[0]
+        if cmd not in SAFE_COMMANDS:
+            logger.warning(f"Blocked unauthorized command: {cmd}")
+            raise HTTPException(status_code=403, detail=f"Command '{cmd}' is not allowed.")
 
-    try:
+        # Validate if the command exists in the system path
+        cmd_path = shutil.which(cmd)
+        if not cmd_path:
+            logger.warning(f"Command not found: {cmd}")
+            raise HTTPException(status_code=404, detail=f"Command '{cmd}' not found on system.")
+
+        # Execute the command securely
         result = subprocess.run(
             command_parts,
-            check=True,
+            check=False,  # Avoid automatic exceptions; handle errors manually
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             cwd=BASE_DIR
         )
-        stdout = result.stdout.strip()
-        stderr = result.stderr.strip()
+
+        # Log execution result
+        logger.info(f"Command executed: {request.command}, Exit code: {result.returncode}")
+
         return {
-            "stdout": stdout,
-            "stderr": stderr,
-            "logs": "AIJudge removed. Whitelist in use."
+            "command": request.command,
+            "stdout": result.stdout.strip(),
+            "stderr": result.stderr.strip(),
+            "exit_code": result.returncode
         }
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Command failed: {request.command}\nStderr: {e.stderr}")
-        raise HTTPException(status_code=500, detail=f"Command failed: {e.stderr}")
+
     except Exception as e:
-        logger.error(f"Command execution failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Command execution failed: {str(e)}")
+        logger.error(f"Command execution failed: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail="Command execution failed.")
