@@ -11,9 +11,13 @@ NGROK_PID=$!
 # Allow some time for ngrok to initialize and set NGROK_URL
 sleep 5
 
-# Check if NGROK_URL is set
-if [ -z "$NGROK_URL" ]; then
-    echo "NGROK_URL is not set. Exiting."
+# Retrieve NGROK_URL from the shared file
+if [ -f "/tmp/ngrok_url.txt" ]; then
+    NGROK_URL=$(cat /tmp/ngrok_url.txt)
+    export NGROK_URL
+    echo "NGROK_URL successfully retrieved: $NGROK_URL"
+else
+    echo "NGROK_URL file not found. Exiting."
     kill "$NGROK_PID" 2>/dev/null || true
     exit 1
 fi
