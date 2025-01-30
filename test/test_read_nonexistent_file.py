@@ -2,7 +2,7 @@
 import requests
 import os
 
-BASE_URL = 'http://localhost:8001'
+BASE_URL = 'http://localhost:8000'
 API_KEY = os.getenv("API_KEY")
 API_KEY_NAME = "x-api-key"
 

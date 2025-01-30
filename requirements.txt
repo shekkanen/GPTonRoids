@@ -16,3 +16,4 @@ PyGithub
 requests
 pytest
 httpx
+pytest-mock
