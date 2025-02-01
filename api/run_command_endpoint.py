@@ -15,7 +15,7 @@ class RunCommandRequest(BaseModel):
     plan: str  # Yhteensopivuuden vuoksi, voi myöhemmin käyttää lokituksessa
 
 SAFE_COMMANDS = {
-    "sh", "bash", "adb", "flutter", "compile_and_run.sh", "./compile_and_run.sh",
+    "sh", "sleep", "bash", "adb", "flutter", "compile_and_run.sh", "./compile_and_run.sh",
     "tail", "cat", "mkdir", "rm", "ls", "pwd", "uname", "echo", "hostname", "git"
 }
 
@@ -67,6 +67,7 @@ async def run_command(request: RunCommandRequest):
         use_shell = False
 
     try:
+        logger.info(f"Executing command: {command_str}, use_shell={use_shell}, cwd={BASE_DIR}") # Added log
         if use_shell:
             # Ajetaan koko komentorivi shell=True -tilassa
             result = subprocess.run(
@@ -118,7 +119,7 @@ async def run_command(request: RunCommandRequest):
                 cwd=BASE_DIR
             )
 
-        logger.info(f"Command executed: {request.command}, Exit code: {result.returncode}")
+        logger.info(f"Command executed: {request.command}, Exit code: {result.returncode}") # Keep original log
 
         return {
             "command": request.command,
