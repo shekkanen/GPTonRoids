@@ -6,8 +6,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
 
 # Base directory setup
-BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_DIR = Path(BASE_DIR) / "work"
+#BASE_DIR = Path(__file__).resolve().parent.parent
+#BASE_DIR = Path(BASE_DIR) / "work"
+BASE_DIR = Path('/home/sami/sorsat/aakkohassekka')
 
 # Temporary directory setup
 TMP_DIR = BASE_DIR / "tmp"
