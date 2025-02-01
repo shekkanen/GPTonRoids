@@ -66,7 +66,7 @@ from api.upload_file_endpoint import router as upload_file_router
 from api.search_files_endpoint import router as search_files_router
 from api.file_metadata_endpoint import router as file_metadata_router
 from api.github_repo_endpoint import router as github_repo_router
-from api.files_endpoint import router as files_router # ADDED
+from api.files_endpoint import router as files_router  # ADDED
 
 # Include routers in the app
 app.include_router(directories_router)
@@ -80,7 +80,7 @@ app.include_router(upload_file_router)
 app.include_router(search_files_router)
 app.include_router(file_metadata_router)
 app.include_router(github_repo_router)
-app.include_router(files_router) # ADDED
+app.include_router(files_router)  # ADDED
 
 # Optional: Define root endpoint
 @app.get("/")

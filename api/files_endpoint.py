@@ -66,13 +66,13 @@ def delete_file(filename: str):
 
 @router.post("/files/{filename:path}/lines", dependencies=[Depends(get_api_key)])
 def append_lines_to_file(filename: str, file_lines: FileLines):
-     """Appends lines to the end of an existing file, creating a new one if necessary."""
-     file_path = BASE_DIR / filename
-     try:
-         with open(file_path, "a") as f:
-             for line in file_lines.lines:
-                 f.write(line + "\n")
-         return {"message": f"Lines appended to '{filename}' successfully"}
-     except Exception as e:
-         logger.error(f"Failed to append lines to file: {str(e)}", exc_info=True)
-         raise HTTPException(status_code=500, detail=f"Failed to append lines to file: {str(e)}")
+    """Appends lines to the end of an existing file, creating a new one if necessary."""
+    file_path = BASE_DIR / filename
+    try:
+        with open(file_path, "a") as f:
+            for line in file_lines.lines:
+                f.write(line + "\n")
+        return {"message": f"Lines appended to '{filename}' successfully"}
+    except Exception as e:
+        logger.error(f"Failed to append lines to file: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to append lines to file: {str(e)}")
