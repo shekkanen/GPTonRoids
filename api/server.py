@@ -20,41 +20,31 @@ import json
 import time
 import logging
 from github import Github, Auth
+from fastapi.openapi.utils import get_openapi
 from api.config import logger, BASE_DIR, get_api_key
 
-# Retrieve ngrok URL from environment variable
-ngrok_url = os.getenv("NGROK_URL")
+# Aseta FastAPI-sovellus oletusserveriksi localhost:8000.
+# NGROK_URL päivitetään myöhemmin OpenAPI-skeemassa.
+app = FastAPI(
+    title="GPTonRoids API",
+    description="API for GPTonRoids application",
+    version="1.0.0",
+    servers=[{"url": "http://localhost:8000", "description": "Local server"}]
+)
 
-# Initialize FastAPI app with servers list including ngrok_url if set
-if ngrok_url:
-    app = FastAPI(
-        title="GPTonRoids API",
-        description="API for GPTonRoids application",
-        version="1.0.0",
-        servers=[{"url": ngrok_url, "description": "Public ngrok URL"}]
-    )
-else:
-    app = FastAPI(
-        title="GPTonRoids API",
-        description="API for GPTonRoids application",
-        version="1.0.0",
-        servers=[{"url": "http://localhost:8000", "description": "Local server"}]
-    )
-
-# Middleware to set custom Server header
+# Middleware: asetetaan custom Server-header
 @app.middleware("http")
 async def custom_server_header(request: Request, call_next):
     response: Response = await call_next(request)
-    if ngrok_url:
-        response.headers["Server"] = f"FastAPI {ngrok_url}"
-    else:
-        response.headers["Server"] = "FastAPI"
+    # Jos haluttu, voidaan myös tarkastella NGROK_URL:a tässäkin,
+    # mutta tässä käytetään sitä vain OpenAPI-skeemassa.
+    response.headers["Server"] = "FastAPI"
     return response
 
-# Mount static files directory for public access
+# Mountataan static-tiedostojen hakemisto julkiseen käyttöön
 app.mount("/static", StaticFiles(directory=BASE_DIR / "tmp"), name="static")
 
-# Import endpoint routers
+# Importoidaan endpoint-routerit
 from api.directories_endpoints import router as directories_router
 from api.run_command_endpoint import router as run_command_router
 from api.for_chat_gpt_endpoint import router as for_chat_gpt_router
@@ -66,9 +56,9 @@ from api.upload_file_endpoint import router as upload_file_router
 from api.search_files_endpoint import router as search_files_router
 from api.file_metadata_endpoint import router as file_metadata_router
 from api.github_repo_endpoint import router as github_repo_router
-from api.files_endpoint import router as files_router # ADDED
+from api.files_endpoint import router as files_router  # ADDED
 
-# Include routers in the app
+# Lisätään routerit sovellukseen
 app.include_router(directories_router)
 app.include_router(run_command_router)
 app.include_router(for_chat_gpt_router)
@@ -80,12 +70,33 @@ app.include_router(upload_file_router)
 app.include_router(search_files_router)
 app.include_router(file_metadata_router)
 app.include_router(github_repo_router)
-app.include_router(files_router) # ADDED
+app.include_router(files_router)  # ADDED
 
-# Optional: Define root endpoint
+# Perusreititys
 @app.get("/")
 def read_root():
     return {"message": "Welcome to GPTonRoids API"}
 
-# Optional: Customize OpenAPI schema if needed
-# For example, adding additional metadata or tags
+# Muokataan OpenAPI-skeemaa niin, että jokaisessa endpointissa on
+# "x-openai-isConsequential": false ja päivitetään servers-dynamiikka.
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    # Päivitetään servers-kenttä lukemalla NGROK_URL ympäristöstä juuri sillä hetkellä
+    ngrok_url_dynamic = os.getenv("NGROK_URL")
+    if ngrok_url_dynamic and ngrok_url_dynamic.lower() != "null":
+        openapi_schema["servers"] = [{"url": ngrok_url_dynamic, "description": "Public ngrok URL"}]
+    # Lisätään custom kenttä jokaiseen operaatioon
+    for path, methods in openapi_schema.get("paths", {}).items():
+        for operation in methods.values():
+            operation["x-openai-isConsequential"] = False
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi

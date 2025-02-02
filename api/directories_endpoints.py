@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from pydantic import BaseModel
-from api.config import logger, BASE_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key
 
 router = APIRouter()
 
@@ -10,7 +10,7 @@ router = APIRouter()
 @router.get("/directories", dependencies=[Depends(get_api_key)])
 def list_directories():
     logger.info("Listing directories")
-    dirs = [d.name for d in BASE_DIR.iterdir() if d.is_dir()]
+    dirs = [d.name for d in WORK_DIR.iterdir() if d.is_dir()]
     if not dirs:
         raise HTTPException(status_code=404, detail="No directories found")
     return {"directories": dirs}
@@ -19,7 +19,7 @@ def list_directories():
 @router.get("/directories/{dir_name:path}", dependencies=[Depends(get_api_key)])
 def list_directory_content(dir_name: str):
     logger.info(f"Listing contents of directory: {dir_name}")
-    dir_path = BASE_DIR / dir_name
+    dir_path = WORK_DIR / dir_name
 
     if not dir_path.exists():
         raise HTTPException(status_code=404, detail=f"Directory '{dir_name}' not found")
@@ -36,7 +36,7 @@ def list_directory_content(dir_name: str):
 @router.post("/directories/{dir_name}", dependencies=[Depends(get_api_key)])
 def create_directory(dir_name: str):
     logger.info(f"Creating directory: {dir_name}")
-    dir_path = BASE_DIR / dir_name
+    dir_path = WORK_DIR / dir_name
     if dir_path.exists():
         logger.error(f"Directory already exists: {dir_name}")
         raise HTTPException(status_code=400, detail="Directory already exists")
@@ -47,7 +47,7 @@ def create_directory(dir_name: str):
 @router.delete("/directories/{dir_name}", dependencies=[Depends(get_api_key)])
 def delete_directory(dir_name: str):
     logger.info(f"Deleting directory: {dir_name}")
-    dir_path = BASE_DIR / dir_name
+    dir_path = WORK_DIR / dir_name
     if not dir_path.exists():
         logger.error(f"Directory not found: {dir_name}")
         raise HTTPException(status_code=404, detail="Directory not found")

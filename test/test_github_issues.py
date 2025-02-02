@@ -8,11 +8,11 @@ client = TestClient(app)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
-    # Set the API_KEY environment variable for the duration of the tests
-    os.environ["API_KEY"] = "test_api_key"
+    # Set the GPTONROIDS_API_KEY environment variable for the duration of the tests
+    os.environ["GPTONROIDS_API_KEY"] = "test_GPTONROIDS_API_KEY"
     yield
     # Clean up after tests
-    del os.environ["API_KEY"]
+    del os.environ["GPTONROIDS_API_KEY"]
 
 def mock_get_github_client():
     """Mock the GitHub client to avoid actual API calls."""
@@ -51,7 +51,7 @@ def test_get_issues(mock_github_client):
     response = client.post(
         "/github-repo/issues",
         json={"owner": "owner_name", "repo": "repo_name"},
-        headers={"x-api-key": "test_api_key"}
+        headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"}
     )
     assert response.status_code == 200
     issues = response.json()
@@ -71,7 +71,7 @@ def test_create_issue(mock_github_client):
             "title": "Test Issue Title",
             "body": "Test issue body content."
         },
-        headers={"x-api-key": "test_api_key"}
+        headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"}
     )
     assert response.status_code == 200  # Adjusted to 200 based on FastAPI defaults
     issue = response.json()

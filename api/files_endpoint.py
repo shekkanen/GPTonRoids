@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from pathlib import Path
-from api.config import logger, BASE_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key
+import aiofiles
 
 router = APIRouter()
 
@@ -12,39 +13,36 @@ class FileLines(BaseModel):
     lines: list[str]
 
 @router.post("/files/{filename:path}/append", dependencies=[Depends(get_api_key)])
-def append_to_file(filename: str, file_content: FileContent):
-    """Appends content to the end of an existing file or creates a new one."""
-    file_path = BASE_DIR / filename
+async def append_to_file(filename: str, file_content: FileContent):
+    file_path = WORK_DIR / filename
     try:
-        with open(file_path, "a") as f:
-            f.write(file_content.content)
+        async with aiofiles.open(file_path, "a") as f:
+            await f.write(file_content.content)
         return {"message": f"Content appended to '{filename}' successfully"}
     except Exception as e:
         logger.error(f"Failed to append to file: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to append to file: {str(e)}")
 
 @router.put("/files/{filename:path}", dependencies=[Depends(get_api_key)])
-def write_file(filename: str, file_content: FileContent):
-    """Writes the given content to the file, overwriting existing content or creating new file."""
-    file_path = BASE_DIR / filename
+async def write_file(filename: str, file_content: FileContent):
+    file_path = WORK_DIR / filename
     try:
-         with open(file_path, "w") as f:
-             f.write(file_content.content)
-         return {"message": f"File written successfully"}
+        async with aiofiles.open(file_path, "w") as f:
+            await f.write(file_content.content)
+        return {"message": "File written successfully"}
     except Exception as e:
         logger.error(f"Failed to write to file: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to write to file: {str(e)}")
 
 @router.get("/files/{filename:path}", dependencies=[Depends(get_api_key)])
-def read_file(filename: str):
-    """Reads the content of a file"""
-    file_path = BASE_DIR / filename
+async def read_file(filename: str):
+    file_path = WORK_DIR / filename
     if not file_path.exists():
         logger.error(f"File not found: {filename}")
         raise HTTPException(status_code=404, detail="File not found")
     try:
-        with open(file_path, "r") as f:
-            content = f.read()
+        async with aiofiles.open(file_path, "r") as f:
+            content = await f.read()
         return content
     except Exception as e:
         logger.error(f"Failed to read file: {str(e)}", exc_info=True)
@@ -52,8 +50,7 @@ def read_file(filename: str):
 
 @router.delete("/files/{filename:path}", dependencies=[Depends(get_api_key)])
 def delete_file(filename: str):
-    """Deletes a file."""
-    file_path = BASE_DIR / filename
+    file_path = WORK_DIR / filename
     if not file_path.exists():
         logger.error(f"File not found: {filename}")
         raise HTTPException(status_code=404, detail="File not found")
@@ -65,14 +62,13 @@ def delete_file(filename: str):
         raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
 
 @router.post("/files/{filename:path}/lines", dependencies=[Depends(get_api_key)])
-def append_lines_to_file(filename: str, file_lines: FileLines):
-     """Appends lines to the end of an existing file, creating a new one if necessary."""
-     file_path = BASE_DIR / filename
-     try:
-         with open(file_path, "a") as f:
-             for line in file_lines.lines:
-                 f.write(line + "\n")
-         return {"message": f"Lines appended to '{filename}' successfully"}
-     except Exception as e:
-         logger.error(f"Failed to append lines to file: {str(e)}", exc_info=True)
-         raise HTTPException(status_code=500, detail=f"Failed to append lines to file: {str(e)}")
+async def append_lines_to_file(filename: str, file_lines: FileLines):
+    file_path = WORK_DIR / filename
+    try:
+        async with aiofiles.open(file_path, "a") as f:
+            for line in file_lines.lines:
+                await f.write(line + "\n")
+        return {"message": f"Lines appended to '{filename}' successfully"}
+    except Exception as e:
+        logger.error(f"Failed to append lines to file: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to append lines to file: {str(e)}")

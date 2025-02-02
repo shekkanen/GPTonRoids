@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import subprocess
 import logging
 import shlex
-from api.config import logger, BASE_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key
 
 router = APIRouter()
 
@@ -41,7 +41,7 @@ async def run_command(request: RunCommandRequest):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=BASE_DIR
+            cwd=WORK_DIR
         )
         stdout = result.stdout.strip()
         stderr = result.stderr.strip()

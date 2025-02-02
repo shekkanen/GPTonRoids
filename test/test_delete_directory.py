@@ -8,12 +8,12 @@ client = TestClient(app)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
-    os.environ["API_KEY"] = "test_api_key"
+    os.environ["GPTONROIDS_API_KEY"] = "test_GPTONROIDS_API_KEY"
     yield
-    del os.environ["API_KEY"]
+    del os.environ["GPTONROIDS_API_KEY"]
 
 def test_delete_directory():
-    client.post("/directories/test_dir", headers={"x-api-key": "test_api_key"})
-    response = client.delete("/directories/test_dir", headers={"x-api-key": "test_api_key"})
+    client.post("/directories/test_dir", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
+    response = client.delete("/directories/test_dir", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert response.json() == {"message": "Directory 'test_dir' deleted successfully"}
