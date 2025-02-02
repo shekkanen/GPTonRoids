@@ -15,37 +15,44 @@ def get_screenshot_text(
     prompt: str = Query(
         "Describe in detail what is visible in this screenshot.",
         description="Custom prompt to override the default prompt for the Groq API call"
-    )
+    ),
+    x: int = Query(None, description="X-koordinaatti ylävasemmasta kulmasta (valinnainen)"),
+    y: int = Query(None, description="Y-koordinaatti ylävasemmasta kulmasta (valinnainen)"),
+    width: int = Query(None, description="Alueen leveys (valinnainen)"),
+    height: int = Query(None, description="Alueen korkeus (valinnainen)")
 ):
     """
-    Ottaa kuvakaappauksen, tallentaa sen TMP_DIR:iin (BASE_DIR / tmp),
-    koodaa kuvan base64-muotoon, lähettää sen Groq API:lle img2txt -malliin
-    käyttäen annettua promptia, ja palauttaa kuvan sisällöstä saadun tekstin.
+    Ottaa kuvakaappauksen joko koko näytöstä tai määritellyltä alueelta (x, y, width, height),
+    tallentaa sen TMP_DIR:iin (BASE_DIR / tmp), koodaa kuvan base64-muotoon, lähettää sen Groq API:lle
+    img2txt -malliin käyttäen annettua promptia, ja palauttaa kuvan sisällöstä saadun tekstin.
     """
     try:
         # Aseta DISPLAY, jos ollaan headless-ympäristössä
         if not os.getenv('DISPLAY'):
             os.environ['DISPLAY'] = ':0'
 
-        # Ota kuvakaappaus
-        screenshot = pyautogui.screenshot()
+        # Jos kaikki alueen parametrit on annettu, otetaan vain kyseinen osa näytöstä
+        if x is not None and y is not None and width is not None and height is not None:
+            screenshot = pyautogui.screenshot(region=(x, y, width, height))
+        else:
+            screenshot = pyautogui.screenshot()
 
-        # Tallenna kuvakaappaus levylle TMP_DIR (BASE_DIR / tmp)
-        file_path = TMP_DIR / f"{uuid.uuid4()}.jpg"
-        screenshot.save(file_path, format="JPEG")
+        # Tallennetaan kuvakaappaus levylle TMP_DIR käyttäen PNG-formaattia (häviötön formaatti säilyttää yksityiskohdat paremmin)
+        file_path = TMP_DIR / f"{uuid.uuid4()}.png"
+        screenshot.save(file_path, format="PNG")
         logger.info(f"Screenshot saved: {file_path}")
 
-        # Muunna kuvakaappaus base64-stringiksi
+        # Muunnetaan kuvakaappaus base64-stringiksi PNG-muodossa
         buffered = BytesIO()
-        screenshot.save(buffered, format="JPEG")
+        screenshot.save(buffered, format="PNG")
         image_bytes = buffered.getvalue()
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
-        image_data_url = f"data:image/jpeg;base64,{base64_image}"
+        image_data_url = f"data:image/png;base64,{base64_image}"
 
         # Luo Groq API -client ja lähetä pyyntö käyttäen parametrisoitua promptia
         client = Groq()
         chat_completion = client.chat.completions.create(
-            model="llama-3.2-90b-vision-preview",  # Vaihda tarvittaessa toiseen malliin
+            model="llama-3.2-90b-vision-preview",  # Vaihda tarvittaessa mallia
             messages=[
                 {
                     "role": "user",
