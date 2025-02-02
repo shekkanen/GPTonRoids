@@ -67,24 +67,27 @@ GPTonRoids leverages GPT Actions, a feature that allows ChatGPT to perform API c
 
 ## Setup
 
-1. **Clone the Repository:**
+1. **Install Ngrok**
+   - free version from https://ngrok.com
+
+2. **Clone the Repository:**
    ```bash
    git clone https://github.com/yourusername/GPTonRoids.git
    cd GPTonRoids
    ```
 
-2. **Create and Activate a Virtual Environment:**
+3. **Create and Activate a Virtual Environment:**
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    ```
 
-3. **Install Dependencies:**
+4. **Install Dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure Environment Variables:**
+5. **Configure Environment Variables:**
    - Copy the example file:
      ```bash
      cp .env.example .env
@@ -95,23 +98,24 @@ GPTonRoids leverages GPT Actions, a feature that allows ChatGPT to perform API c
       - `WORK_DIR` (Optional): Defaults to <project_root>/work if not set.
       - `SAFE_COMMANDS` (Optional): Comma-separated list of allowed commands for the run-command endpoint. Defaults to ls,pwd,uname,echo,cat,hostname,git.
 
-5. **Start the Application:**
+6. **Start the Application:**
+- Copy the URL from the console after the start:
    ```bash
    ./start_all.sh
    ```
 
    ![OpenAPI Image](./docs/openapi_url_resized.png)
 
-6. **Edit your GPT:**
+7. **Edit your GPT:**
 - Add actions, Import from URL
 
    ![OpenAPI Image](./docs/gpt_step1.png)
 
-7. **Paste your OpenAPI URL and Import:**
+8. **Paste your OpenAPI URL and Import:**
 
    ![OpenAPI Image](./docs/gpt_step2.png)
 
-8. **Set Authentication API Key, Custom Header Name and your API key defined in `.env`:**
+9. **Set Authentication API Key, Custom Header Name and your API key defined in `.env`:**
 
    ![OpenAPI Image](./docs/gpt_step3.png)
 
@@ -119,11 +123,11 @@ GPTonRoids leverages GPT Actions, a feature that allows ChatGPT to perform API c
 
 GPTonRoids uses environment variables for configuration, managed through a .env file for ease of setup and security. Below are the environment variables used by GPTonRoids:
 
-GPTONROIDS_API_KEY: Required. API key to secure access to the GPTonRoids API endpoints. Choose a strong, secret key.
-GITHUB_TOKEN: Required. Your personal GitHub access token with the necessary permissions.
-WORK_DIR (Optional): Defaults to <project_root>/work if not set.
-SAFE_COMMANDS (Optional): Comma-separated list of allowed commands for the run-command endpoint. Defaults to ls,pwd,uname,echo,cat,hostname,git.
-PORT_TO_TUNNEL: Port for ngrok to tunnel (default: 8000).
+- `GPTONROIDS_API_KEY`: Required. API key to secure access to the GPTonRoids API endpoints. Choose a strong, secret key.
+- `GITHUB_TOKEN`:(Optional) Your personal GitHub access token with the necessary permissions.
+- `WORK_DIR`: (Optional) Defaults to <project_root>/work if not set.
+- `SAFE_COMMANDS`:(Optional) Comma-separated list of allowed commands for the run-command endpoint. Defaults to ls,pwd,uname,echo,cat,hostname,git.
+- `PORT_TO_TUNNEL`: (Optional) Port for ngrok to tunnel (default: 8000).
 
 ## API Documentation
 
