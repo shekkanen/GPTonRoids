@@ -18,3 +18,4 @@ pytest
 httpx
 pytest-mock
 aiofiles
+groq
