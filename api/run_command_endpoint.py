@@ -11,86 +11,147 @@ router = APIRouter()
 
 class RunCommandRequest(BaseModel):
     command: str
-    plan: str  # Yhteensopivuuden vuoksi, voi myöhemmin käyttää lokituksessa
+    plan: str  # Yhteensopivuuden vuoksi, lokitusta varten tulevaisuudessa
+
+def split_commands(command_str: str):
+    """
+    Pilkkoo annetun komentorivin useisiin osakomentoihin puolipisteen avulla.
+    Käyttää shlexin tukea, jotta lainausmerkit huomioidaan oikein.
+    """
+    try:
+        # Käytetään shlexia erottelemaan sekä sanat että erotinmerkkinä puolipisteet.
+        lexer = shlex.shlex(command_str, posix=True)
+        lexer.whitespace_split = True
+        # Asetamme puolipisteen erotinmerkiksi – Python 3.9+:ssa voi käyttää punctuation_chars
+        lexer.punctuation_chars = ';'
+    except Exception:
+        # Jos ympäristö ei tue punctuation_chars -attribuuttia, turvaudutaan perusasetuksiin.
+        lexer = shlex.shlex(command_str, posix=True)
+        lexer.whitespace_split = True
+    tokens = list(lexer)
+    
+    # Erotellaan tokenit puolipisteiden kohdalta
+    commands = []
+    current_cmd = []
+    for token in tokens:
+        if token == ';':
+            if current_cmd:
+                commands.append(current_cmd)
+                current_cmd = []
+        else:
+            current_cmd.append(token)
+    if current_cmd:
+        commands.append(current_cmd)
+    return commands
+
+def process_command_tokens(command_tokens):
+    """
+    Tarkistaa ja valmistaa yhden käskyn tokenit:
+      - Varmistetaan, että käskyn ensimmäinen komento on SAFE_COMMANDS-listassa.
+      - Jos komennossa on polku, varmistetaan, ettei yritetä directory traversalia ja että tiedosto on suoritettava.
+      - Jos kyseessä on .sh-tiedosto ilman shebangia, lisätään 'bash' suoritukseen.
+    """
+    if not command_tokens:
+        raise HTTPException(status_code=400, detail="Tyhjä komento.")
+    
+    cmd = command_tokens[0]
+    if cmd not in SAFE_COMMANDS:
+        logger.warning(f"Blocked unauthorized command: {cmd}")
+        raise HTTPException(status_code=403, detail=f"Command '{cmd}' is not allowed.")
+
+    WORK_DIR_abs = os.path.abspath(WORK_DIR)
+
+    # Jos komennossa on polku, ratkotaan se WORK_DIR:iin nähden
+    if '/' in cmd:
+        full_path = os.path.abspath(os.path.join(WORK_DIR, cmd))
+        if not (full_path == WORK_DIR_abs or full_path.startswith(WORK_DIR_abs + os.sep)):
+            logger.warning(f"Blocked path traversal attempt: {cmd}")
+            raise HTTPException(status_code=403, detail="Path traversal not allowed.")
+        if not os.path.isfile(full_path):
+            logger.warning(f"Command not found: {cmd}")
+            raise HTTPException(status_code=404, detail=f"Command '{cmd}' not found on system.")
+        if not os.access(full_path, os.X_OK):
+            logger.warning(f"Command not executable: {cmd}")
+            raise HTTPException(status_code=403, detail=f"Command '{cmd}' is not executable.")
+
+        # Korvataan komennon nimi täyteen polkuun
+        command_tokens[0] = full_path
+
+        # Tarkistetaan, onko .sh-tiedosto ilman shebangia
+        try:
+            with open(full_path, 'r', encoding='utf-8') as f:
+                first_line = f.readline().strip()
+        except Exception as e:
+            logger.error(f"Failed to read file {full_path}: {str(e)}")
+            first_line = ""
+        if not first_line.startswith("#!"):
+            if full_path.endswith(".sh"):
+                logger.info(f"No shebang found in {full_path}, prefixing command with 'bash'")
+                # Lisätään 'bash' alkuun, jos sitä ei jo ole
+                if command_tokens[0] != "bash":
+                    command_tokens.insert(0, "bash")
+    else:
+        # Haetaan komennon polku järjestelmän PATH:sta
+        cmd_path = shutil.which(cmd)
+        if not cmd_path:
+            logger.warning(f"Command not found in system PATH: {cmd}")
+            raise HTTPException(status_code=404, detail=f"Command '{cmd}' not found on system.")
+        command_tokens[0] = cmd_path
+
+    return command_tokens
 
 @router.post("/run-command", dependencies=[Depends(get_api_key)])
 async def run_command(request: RunCommandRequest):
     """
     Suorittaa valkoistetut shell-komennot turvallisesti ja palauttaa tuloksen.
+    Tukee komentojen ketjuttamista puolipisteellä (;), esim.
+      "sleep 30; cat flutter.log -n 50"
     """
     logger.info(f"Received command request: {request.command}")
 
     try:
-        # Pilkotaan komento shell-tyylisesti
-        command_parts = shlex.split(request.command)
-        if not command_parts:
+        # Jaetaan komentorivi yksittäisiksi komennoiksi
+        commands_list = split_commands(request.command)
+        if not commands_list:
             raise HTTPException(status_code=400, detail="No command provided.")
 
-        cmd = command_parts[0]
-        if cmd not in SAFE_COMMANDS:
-            logger.warning(f"Blocked unauthorized command: {cmd}")
-            raise HTTPException(status_code=403, detail=f"Command '{cmd}' is not allowed.")
+        combined_stdout = []
+        combined_stderr = []
+        exit_code = 0
 
-        WORK_DIR_abs = os.path.abspath(WORK_DIR)
-        cmd_path = None
+        # Suoritetaan käskyt yksi kerrallaan
+        for cmd_tokens in commands_list:
+            processed_tokens = process_command_tokens(cmd_tokens)
+            logger.info(f"Executing command: {' '.join(processed_tokens)}")
+            result = subprocess.run(
+                processed_tokens,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                cwd=WORK_DIR,
+                timeout=55
+            )
+            combined_stdout.append(result.stdout.strip())
+            combined_stderr.append(result.stderr.strip())
+            exit_code = result.returncode
 
-        if '/' in cmd:
-            # Käsitellään polkuna suhteessa WORK_DIR:iin
-            full_path = os.path.abspath(os.path.join(WORK_DIR, cmd))
-            # Estetään directory traversal WORK_DIR:n ulkopuolelle
-            if not (full_path == WORK_DIR_abs or full_path.startswith(WORK_DIR_abs + os.sep)):
-                logger.warning(f"Blocked path traversal attempt: {cmd}")
-                raise HTTPException(status_code=403, detail="Path traversal not allowed.")
-            if not os.path.isfile(full_path):
-                logger.warning(f"Command not found: {cmd}")
-                raise HTTPException(status_code=404, detail=f"Command '{cmd}' not found on system.")
-            if not os.access(full_path, os.X_OK):
-                logger.warning(f"Command not executable: {cmd}")
-                raise HTTPException(status_code=403, detail=f"Command '{cmd}' is not executable.")
-
-            cmd_path = full_path
-
-            # Tarkistetaan, onko tiedostolla shebang. Jos ei ja kyseessä on .sh-tiedosto, lisätään "bash"
-            try:
-                with open(full_path, 'r', encoding='utf-8') as f:
-                    first_line = f.readline().strip()
-            except Exception as e:
-                logger.error(f"Failed to read file {full_path}: {str(e)}")
-                first_line = ""
-            if not first_line.startswith("#!"):
-                if full_path.endswith(".sh"):
-                    logger.info(f"No shebang found in {full_path}, prefixing command with 'bash'")
-                    if command_parts[0] != "bash":
-                        command_parts.insert(0, "bash")
-        else:
-            # Tarkistetaan järjestelmän PATH:sta
-            cmd_path = shutil.which(cmd)
-            if not cmd_path:
-                logger.warning(f"Command not found in system PATH: {cmd}")
-                raise HTTPException(status_code=404, detail=f"Command '{cmd}' not found on system.")
-
-        # Suoritetaan komento
-        result = subprocess.run(
-            command_parts,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            cwd=WORK_DIR,
-            timeout=55
-        )
-
-        logger.info(f"Command executed: {request.command}, Exit code: {result.returncode}")
+            # Jos käsky epäonnistuu, keskeytetään ketjun suoritus
+            if result.returncode != 0:
+                logger.warning(f"Command failed with exit code {result.returncode}. Halting further execution.")
+                break
 
         return {
             "command": request.command,
-            "stdout": result.stdout.strip(),
-            "stderr": result.stderr.strip(),
-            "exit_code": result.returncode
+            "stdout": "\n".join(combined_stdout).strip(),
+            "stderr": "\n".join(combined_stderr).strip(),
+            "exit_code": exit_code
         }
 
     except HTTPException as he:
         raise he
+    except subprocess.TimeoutExpired as te:
+        logger.error(f"Command timeout: {str(te)}")
+        raise HTTPException(status_code=504, detail="Command execution timed out.")
     except Exception as e:
         logger.error(f"Command execution failed: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Command execution failed.")
