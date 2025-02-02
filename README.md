@@ -39,6 +39,14 @@ GPTonRoids offers a comprehensive set of features that allow users to interact w
 
 ### Screenshot Capture:
 - Capture screenshots of the local machine and retrieve the file path.
+- If you're using [scrcpy](https://github.com/Genymobile/scrcpy) for Android phone mirroring, GPTonRoids can capture screenshots of your phone screen *while you're debugging that sweet new app*. Because yes—GPT sees **everything** (where permitted by your system, obviously).
+
+> **Note**: The screenshot functionality uses the [Groq API](https://groq.com/) for image-to-text conversion. You’ll need a (free) API key from [Groq](https://groq.com/) to unlock the magic. Pop that into your `.env` file as described in [Setup](#setup).
+
+ - Example instruction for the GPT:
+```bash
+Check app with screenshot api 0,0,720,1600. Ask to describe the app UI in extra detail, incorrect sizes, positions etc.
+```
 
 ### API Extensions:
 - Easily extendable with additional endpoints to integrate more services and functionalities.
