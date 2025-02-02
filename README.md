@@ -97,20 +97,20 @@ GPTonRoids leverages GPT Actions, a feature that allows ChatGPT to perform API c
    ./start_all.sh
    ```
 
-![OpenAPI Image](./docs/openapi_url_resized.png)
+   ![OpenAPI Image](./docs/openapi_url_resized.png)
 
 6. **Edit your GPT:**
 - Add actions, Import from URL
 
-![OpenAPI Image](./docs/gpt_step1_resized.png)
+   ![OpenAPI Image](./docs/gpt_step1.png)
 
 7. **Paste your OpenAPI URL and Import:**
 
-![OpenAPI Image](./docs/gpt_step2_resized.png)
+   ![OpenAPI Image](./docs/gpt_step2.png)
 
 8. **Set Authentication API Key, Custom Header Name and your API key defined in `.env`:**
 
-![OpenAPI Image](./docs/gpt_step3_resized.png)
+   ![OpenAPI Image](./docs/gpt_step3.png)
 
 ## Environment Variables
 
