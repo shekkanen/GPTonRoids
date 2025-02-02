@@ -110,6 +110,23 @@ Start the Application:
 ./start_all.sh
 Use code with caution.
 Bash
+
+
+![OpenAPI Image](./docs/openapi_url_resized.png)
+
+Edit your GPT, Add actions, Import from URL
+
+![OpenAPI Image](./docs/gpt_step1_resized.png)
+
+Paste your OpenAPI URL and Import
+
+![OpenAPI Image](./docs/gpt_step2_resized.png)
+
+Set Authentication API Key, Custom Header Name and your API key you have defined in .env file
+
+![OpenAPI Image](./docs/gpt_step3_resized.png)
+
+
 Run Tests:
 
 pytest
