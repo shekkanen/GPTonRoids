@@ -2,6 +2,9 @@
 
 GPTonRoids is a powerful and flexible application that bridges the capabilities of ChatGPT with your local environment and various third-party services through GPT Actions. By leveraging FastAPI and a suite of custom endpoints, GPTonRoids enables seamless interaction between natural language commands and system-level operations, enhancing productivity and extending the functionality of ChatGPT for specific use cases.
 
+[![Example Screenshot](./docs/gptonroids_example1_thumb.png)](./docs/gptonroids_example1.png)
+
+
 ## Table of Contents
 - [Features](#features)
 - [How It Works](#how-it-works)
