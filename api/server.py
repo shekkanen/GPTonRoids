@@ -21,7 +21,7 @@ import time
 import logging
 from github import Github, Auth
 from fastapi.openapi.utils import get_openapi
-from api.config import logger, WORK_DIR, get_api_key
+from api.config import logger, BASE_DIR, get_api_key
 
 # Aseta FastAPI-sovellus oletusserveriksi localhost:8000.
 # NGROK_URL päivitetään myöhemmin OpenAPI-skeemassa.
@@ -42,7 +42,7 @@ async def custom_server_header(request: Request, call_next):
     return response
 
 # Mountataan static-tiedostojen hakemisto julkiseen käyttöön
-app.mount("/static", StaticFiles(directory=WORK_DIR / "tmp"), name="static")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "tmp"), name="static")
 
 # Importoidaan endpoint-routerit
 from api.directories_endpoints import router as directories_router

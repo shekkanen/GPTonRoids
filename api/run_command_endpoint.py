@@ -16,32 +16,42 @@ class RunCommandRequest(BaseModel):
 def split_commands(command_str: str):
     """
     Pilkkoo annetun komentorivin useisiin osakomentoihin puolipisteen avulla.
-    Käyttää shlexin tukea, jotta lainausmerkit huomioidaan oikein.
+    Jos shlex tukee punctuation_chars-attribuuttia, käytetään sitä. Muussa tapauksessa
+    jaetaan ensin puolipisteittäin ja sitten shlex.splitillä, jotta lainausmerkit huomioidaan.
     """
-    try:
-        # Käytetään shlexia erottelemaan sekä sanat että erotinmerkkinä puolipisteet.
-        lexer = shlex.shlex(command_str, posix=True)
-        lexer.whitespace_split = True
-        # Asetamme puolipisteen erotinmerkiksi – Python 3.9+:ssa voi käyttää punctuation_chars
-        lexer.punctuation_chars = ';'
-    except Exception:
-        # Jos ympäristö ei tue punctuation_chars -attribuuttia, turvaudutaan perusasetuksiin.
-        lexer = shlex.shlex(command_str, posix=True)
-        lexer.whitespace_split = True
-    tokens = list(lexer)
-    
-    # Erotellaan tokenit puolipisteiden kohdalta
-    commands = []
-    current_cmd = []
-    for token in tokens:
-        if token == ';':
+    # Jos punctuation_chars on tuettu, käytetään sitä.
+    if hasattr(shlex, 'punctuation_chars'):
+        try:
+            lexer = shlex.shlex(command_str, posix=True)
+            lexer.whitespace_split = True
+            lexer.punctuation_chars = ';'
+            tokens = list(lexer)
+            commands = []
+            current_cmd = []
+            for token in tokens:
+                if token == ';':
+                    if current_cmd:
+                        commands.append(current_cmd)
+                        current_cmd = []
+                else:
+                    current_cmd.append(token)
             if current_cmd:
                 commands.append(current_cmd)
-                current_cmd = []
-        else:
-            current_cmd.append(token)
-    if current_cmd:
-        commands.append(current_cmd)
+            return commands
+        except Exception as e:
+            logger.warning(f"punctuation_chars -attribuutin käyttö epäonnistui: {e}")
+            # Fall back to manual split alla.
+    
+    # Fallback: jaetaan merkkijono puolipisteittäin, sitten shlex.split kullekin osalle.
+    commands = []
+    for part in command_str.split(';'):
+        part = part.strip()
+        if part:
+            try:
+                commands.append(shlex.split(part))
+            except Exception as e:
+                logger.error(f"Failed to split part '{part}': {e}")
+                raise HTTPException(status_code=400, detail="Command parsing failed.")
     return commands
 
 def process_command_tokens(command_tokens):
