@@ -13,51 +13,99 @@ class RunCommandRequest(BaseModel):
     command: str
     plan: str  # Yhteensopivuuden vuoksi, lokitusta varten tulevaisuudessa
 
+def fallback_split(command_str: str):
+    """
+    Jos shlexin punctuation_chars ei ole käytettävissä, pilkotaan komentojono manuaalisesti
+    tukien erotusoperaattoreita "&&" ja ";" huomioiden lainausmerkit.
+    """
+    commands = []
+    current = ""
+    in_single = False
+    in_double = False
+    i = 0
+    while i < len(command_str):
+        ch = command_str[i]
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            current += ch
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+            current += ch
+        elif not in_single and not in_double:
+            # Tarkistetaan "&&"
+            if command_str[i:i+2] == "&&":
+                if current.strip():
+                    commands.append(current.strip())
+                current = ""
+                i += 2
+                continue
+            elif ch == ';':
+                if current.strip():
+                    commands.append(current.strip())
+                current = ""
+            else:
+                current += ch
+        else:
+            current += ch
+        i += 1
+    if current.strip():
+        commands.append(current.strip())
+    # Käytetään shlex.split jokaiselle osakomennolle, jotta lainaukset otetaan huomioon oikein
+    return [shlex.split(cmd) for cmd in commands]
+
 def split_commands(command_str: str):
     """
-    Pilkkoo annetun komentorivin useisiin osakomentoihin puolipisteen avulla.
-    Jos shlex tukee punctuation_chars-attribuuttia, käytetään sitä. Muussa tapauksessa
-    jaetaan ensin puolipisteittäin ja sitten shlex.splitillä, jotta lainausmerkit huomioidaan.
+    Pilkkoo annetun komentojonon listaksi komentoja. Tukee sekä ";" että "&&" erotuksina.
+    Yritetään ensin shlexin punctuation_chars -attribuuttia, ja jos se epäonnistuu,
+    käytetään fallback_split-funktiota.
     """
-    # Jos punctuation_chars on tuettu, käytetään sitä.
     if hasattr(shlex, 'punctuation_chars'):
         try:
             lexer = shlex.shlex(command_str, posix=True)
             lexer.whitespace_split = True
-            lexer.punctuation_chars = ';'
+            # Määritellään erotinmerkkeinä puolipiste ja ampersandi (jolloin "&&" tulee erikseen kahta '&'-merkkiä)
+            lexer.punctuation_chars = ";&"
             tokens = list(lexer)
             commands = []
             current_cmd = []
-            for token in tokens:
+            i = 0
+            while i < len(tokens):
+                token = tokens[i]
                 if token == ';':
                     if current_cmd:
                         commands.append(current_cmd)
                         current_cmd = []
+                    i += 1
+                    continue
+                elif token == '&':
+                    # Jos seuraava token on myös "&", käsitellään niitä erotinmerkkinä
+                    if i + 1 < len(tokens) and tokens[i + 1] == '&':
+                        if current_cmd:
+                            commands.append(current_cmd)
+                            current_cmd = []
+                        i += 2
+                        continue
+                    else:
+                        # Yksittäinen '&' – lisätään se osaksi komentoa
+                        current_cmd.append(token)
+                        i += 1
+                        continue
                 else:
                     current_cmd.append(token)
+                    i += 1
             if current_cmd:
                 commands.append(current_cmd)
             return commands
         except Exception as e:
             logger.warning(f"punctuation_chars -attribuutin käyttö epäonnistui: {e}")
-            # Fall back to manual split alla.
-    
-    # Fallback: jaetaan merkkijono puolipisteittäin, sitten shlex.split kullekin osalle.
-    commands = []
-    for part in command_str.split(';'):
-        part = part.strip()
-        if part:
-            try:
-                commands.append(shlex.split(part))
-            except Exception as e:
-                logger.error(f"Failed to split part '{part}': {e}")
-                raise HTTPException(status_code=400, detail="Command parsing failed.")
-    return commands
+            return fallback_split(command_str)
+    else:
+        return fallback_split(command_str)
 
 def process_command_tokens(command_tokens):
     """
     Tarkistaa ja valmistaa yhden käskyn tokenit:
-      - Varmistetaan, että käskyn ensimmäinen komento on SAFE_COMMANDS-listassa.
+      - Varmistetaan, että käskyn ensimmäinen sana (komento) on SAFE_COMMANDS-listassa.
       - Jos komennossa on polku, varmistetaan, ettei yritetä directory traversalia ja että tiedosto on suoritettava.
       - Jos kyseessä on .sh-tiedosto ilman shebangia, lisätään 'bash' suoritukseen.
     """
@@ -92,11 +140,11 @@ def process_command_tokens(command_tokens):
             with open(full_path, 'r', encoding='utf-8') as f:
                 first_line = f.readline().strip()
         except Exception as e:
-            logger.error(f"Failed to read file {full_path}: {str(e)}")
+            logger.error(f"Tiedoston {full_path} lukeminen epäonnistui: {str(e)}")
             first_line = ""
         if not first_line.startswith("#!"):
             if full_path.endswith(".sh"):
-                logger.info(f"No shebang found in {full_path}, prefixing command with 'bash'")
+                logger.info(f"Tiedostosta {full_path} puuttuu shebang, lisätään 'bash' komentoon")
                 # Lisätään 'bash' alkuun, jos sitä ei jo ole
                 if command_tokens[0] != "bash":
                     command_tokens.insert(0, "bash")
@@ -114,13 +162,14 @@ def process_command_tokens(command_tokens):
 async def run_command(request: RunCommandRequest):
     """
     Suorittaa valkoistetut shell-komennot turvallisesti ja palauttaa tuloksen.
-    Tukee komentojen ketjuttamista puolipisteellä (;), esim.
+    Tukee komentojen ketjuttamista erotinoperaattoreilla ";" ja "&&", esim.
       "sleep 30; cat flutter.log -n 50"
+      "git add . && git commit -m \"Added dynamic animations (bounce & glow) to letter cards.\""
     """
     logger.info(f"Received command request: {request.command}")
 
     try:
-        # Jaetaan komentorivi yksittäisiksi komennoiksi
+        # Jaetaan komentojono yksittäisiksi komennoiksi
         commands_list = split_commands(request.command)
         if not commands_list:
             raise HTTPException(status_code=400, detail="No command provided.")
@@ -147,7 +196,7 @@ async def run_command(request: RunCommandRequest):
 
             # Jos käsky epäonnistuu, keskeytetään ketjun suoritus
             if result.returncode != 0:
-                logger.warning(f"Command failed with exit code {result.returncode}. Halting further execution.")
+                logger.warning(f"Command failed with exit code {result.returncode}. Keskeytetään ketjun suoritus.")
                 break
 
         return {
