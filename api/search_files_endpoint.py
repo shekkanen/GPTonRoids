@@ -29,14 +29,14 @@ async def search_in_file(file_path: str, query: str, max_bytes: int = 1024 * 102
 async def process_file(file_path: str, query: str, semaphore: asyncio.Semaphore) -> str:
     """
     Käsittelee yksittäisen tiedoston: jos hakutermi löytyy joko tiedostonimestä
-    tai sen sisällöstä, palauttaa tiedostopolun, muuten None.
+    tai sen sisällöstä, palauttaa tiedostopolun suhteellisena WORK_DIR:stä, muuten None.
     """
     # Tarkistetaan ensin tiedostonimi (nopea vertailu)
     if query in os.path.basename(file_path).lower():
-        return file_path
+        return os.path.relpath(file_path, WORK_DIR)
     async with semaphore:
         if await search_in_file(file_path, query):
-            return file_path
+            return os.path.relpath(file_path, WORK_DIR)
     return None
 
 async def search_files_async(query: str) -> list:
