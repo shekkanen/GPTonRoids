@@ -1,51 +1,56 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from io import BytesIO
 import os
 import pyautogui
 import base64
 import uuid
 
-from groq import Groq  # Ensure that this library is installed
+from groq import Groq  # Varmista, että tämä kirjasto on asennettu
 from api.config import get_api_key, logger, TMP_DIR
 
 router = APIRouter()
 
 @router.get("/screenshot", dependencies=[Depends(get_api_key)])
-def get_screenshot_text():
+def get_screenshot_text(
+    prompt: str = Query(
+        "Describe in detail what is visible in this screenshot.",
+        description="Custom prompt to override the default prompt for the Groq API call"
+    )
+):
     """
-    Takes a screenshot, saves it to TMP_DIR (BASE_DIR / tmp),
-    encodes the image to a base64 string, sends it to the Groq API using the img2txt model,
-    and returns the extracted text.
+    Ottaa kuvakaappauksen, tallentaa sen TMP_DIR:iin (BASE_DIR / tmp),
+    koodaa kuvan base64-muotoon, lähettää sen Groq API:lle img2txt -malliin
+    käyttäen annettua promptia, ja palauttaa kuvan sisällöstä saadun tekstin.
     """
     try:
-        # Set DISPLAY if running in a headless environment
+        # Aseta DISPLAY, jos ollaan headless-ympäristössä
         if not os.getenv('DISPLAY'):
             os.environ['DISPLAY'] = ':0'
 
-        # Take a screenshot
+        # Ota kuvakaappaus
         screenshot = pyautogui.screenshot()
 
-        # Save the screenshot to TMP_DIR (BASE_DIR / tmp)
+        # Tallenna kuvakaappaus levylle TMP_DIR (BASE_DIR / tmp)
         file_path = TMP_DIR / f"{uuid.uuid4()}.jpg"
         screenshot.save(file_path, format="JPEG")
         logger.info(f"Screenshot saved: {file_path}")
 
-        # Convert the screenshot to a base64 string
+        # Muunna kuvakaappaus base64-stringiksi
         buffered = BytesIO()
         screenshot.save(buffered, format="JPEG")
         image_bytes = buffered.getvalue()
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
         image_data_url = f"data:image/jpeg;base64,{base64_image}"
 
-        # Create a Groq API client and send the request
+        # Luo Groq API -client ja lähetä pyyntö käyttäen parametrisoitua promptia
         client = Groq()
         chat_completion = client.chat.completions.create(
-            model="llama-3.2-90b-vision-preview",  # Change the model if needed
+            model="llama-3.2-90b-vision-preview",  # Vaihda tarvittaessa toiseen malliin
             messages=[
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Describe in detail what is visible in this screenshot."},
+                        {"type": "text", "text": prompt},
                         {"type": "image_url", "image_url": {"url": image_data_url}}
                     ]
                 }
@@ -57,7 +62,7 @@ def get_screenshot_text():
             stop=None,
         )
 
-        # Retrieve the generated text from the response
+        # Hae vastauksesta generoitu teksti
         response_text = chat_completion.choices[0].message.content
 
         return {
