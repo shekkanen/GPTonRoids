@@ -5,18 +5,13 @@ import shlex
 import shutil
 import traceback
 import os
-from api.config import logger, WORK_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key, SAFE_COMMANDS
 
 router = APIRouter()
 
 class RunCommandRequest(BaseModel):
     command: str
     plan: str  # Yhteensopivuuden vuoksi, voi myöhemmin käyttää lokituksessa
-
-SAFE_COMMANDS = {
-    "sh","grep","sleep", "bash", "adb", "flutter", "compile_and_run.sh", "./compile_and_run.sh",
-    "tail", "cat", "mkdir", "rm", "ls", "pwd", "uname", "echo", "hostname", "git"
-}
 
 @router.post("/run-command", dependencies=[Depends(get_api_key)])
 async def run_command(request: RunCommandRequest):

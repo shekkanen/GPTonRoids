@@ -15,7 +15,6 @@ if work_dir_env and work_dir_env.strip():
 else:
     WORK_DIR = Path(__file__).resolve().parent.parent / "work"
 
-
 # Temporary directory setup
 TMP_DIR = WORK_DIR / "tmp"
 TMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -34,6 +33,14 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("server")
+
+# Safe commands configuration from environment variable
+safe_commands_str = os.getenv("SAFE_COMMANDS", "ls,pwd,uname,echo,cat,hostname,git")
+SAFE_COMMANDS = set(cmd.strip() for cmd in safe_commands_str.split(',') if cmd.strip())
+if not SAFE_COMMANDS:
+    SAFE_COMMANDS = {"ls", "pwd", "uname", "echo", "cat", "hostname", "git"}  # Default safe commands if empty or not set
+
+logger.info(f"SAFE_COMMANDS loaded from env: {SAFE_COMMANDS}")
 
 GPTONROIDS_API_KEY_header = APIKeyHeader(name="GPTONROIDS_API_KEY", auto_error=False)
 
