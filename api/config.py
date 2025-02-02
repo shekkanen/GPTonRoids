@@ -8,7 +8,7 @@ from fastapi.security.api_key import APIKeyHeader
 from dotenv import load_dotenv
 load_dotenv()
 
-# Base directory setup
+# Work directory setup
 work_dir_env = os.getenv("WORK_DIR")
 if work_dir_env and work_dir_env.strip():
     WORK_DIR = Path(work_dir_env)
@@ -16,7 +16,8 @@ else:
     WORK_DIR = Path(__file__).resolve().parent.parent / "work"
 
 # Temporary directory setup
-TMP_DIR = WORK_DIR / "tmp"
+BASE_DIR = Path(__file__).resolve().parent.parent
+TMP_DIR = BASE_DIR / "tmp"
 TMP_DIR.mkdir(parents=True, exist_ok=True)
 
 # Logs directory setup

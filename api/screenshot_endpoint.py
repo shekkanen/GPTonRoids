@@ -3,39 +3,45 @@ from io import BytesIO
 import os
 import pyautogui
 import base64
+import uuid
+
 from groq import Groq  # Varmista, että tämä kirjasto on asennettu
-from api.config import get_api_key, logger
+from api.config import get_api_key, logger, TMP_DIR
 
 router = APIRouter()
+
 
 @router.get("/screenshot", dependencies=[Depends(get_api_key)])
 def get_screenshot_text():
     """
-    Ottaa kuvakaappauksen, lähettää sen Groq API:lle (img2txt) ja palauttaa kuvan sisällön tekstinä.
+    Ottaa kuvakaappauksen, tallentaa sen levylle BASE_DIR / tmp -kansioon,
+    koodaa kuvan base64-muotoon, lähettää sen Groq API:lle img2txt -malliin
+    ja palauttaa kuvan sisällöstä saadun tekstin.
     """
     try:
-        # Aseta DISPLAY, jos käytössä headless-ympäristö
+        # Aseta DISPLAY, jos ollaan headless-ympäristössä
         if not os.getenv('DISPLAY'):
             os.environ['DISPLAY'] = ':0'
 
         # Ota kuvakaappaus
         screenshot = pyautogui.screenshot()
 
-        # Tallenna kuvakaappaus in-memory bufferiin JPEG-muodossa
+        # Tallenna kuvakaappaus levylle TMP_DIR (BASE_DIR / tmp)
+        file_path = TMP_DIR / f"{uuid.uuid4()}.jpg"
+        screenshot.save(file_path, format="JPEG")
+        logger.info(f"Kuvakaappaus tallennettu: {file_path}")
+
+        # Muunna kuvakaappaus base64-stringiksi
         buffered = BytesIO()
         screenshot.save(buffered, format="JPEG")
         image_bytes = buffered.getvalue()
-
-        # Koodaa kuva base64-muotoon ja rakenna data URL
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
         image_data_url = f"data:image/jpeg;base64,{base64_image}"
 
-        # Luo Groq API -client
+        # Luo Groq API -client ja lähetä pyyntö
         client = Groq()
-
-        # Lähetä kuva Groq API:lle ja pyydä kuvasta kuvailevaa tekstiä
         chat_completion = client.chat.completions.create(
-            model="llama-3.2-11b-vision-preview",  # Vaihda tarvittaessa toiseen malliin
+            model="llama-3.2-90b-vision-preview",  # Vaihda tarvittaessa mallia
             messages=[
                 {
                     "role": "user",
@@ -52,10 +58,14 @@ def get_screenshot_text():
             stop=None,
         )
 
-        # Ota vastauksesta esiin generoitu teksti
+        # Hae vastauksesta generoitu teksti
         response_text = chat_completion.choices[0].message.content
 
-        return {"message": "Kuvakaappaus käsitelty onnistuneesti", "extracted_text": response_text}
+        return {
+            "message": "Kuvakaappaus käsitelty onnistuneesti",
+            "extracted_text": response_text,
+            "saved_image": str(file_path)
+        }
 
     except Exception as e:
         logger.error("Kuvakaappauksen ottaminen tai Groq API -käsittely epäonnistui: " + str(e), exc_info=True)

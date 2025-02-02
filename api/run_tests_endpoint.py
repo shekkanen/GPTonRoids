@@ -1,10 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 import subprocess
 import logging
-from pathlib import Path
-from api.config import logger, WORK_DIR, get_api_key
+from api.config import logger, BASE_DIR, get_api_key
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 router = APIRouter()
