@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
-from api.config import BASE_DIR, get_api_key, logger
+from api.config import WORK_DIR, get_api_key, logger
 from pydantic import BaseModel
 import os
 import asyncio
@@ -41,13 +41,13 @@ async def process_file(file_path: str, query: str, semaphore: asyncio.Semaphore)
 
 async def search_files_async(query: str) -> list:
     """
-    Asynkronisesti hakee tiedostoja BASE_DIR:stä, joissa hakutermi esiintyy.
+    Asynkronisesti hakee tiedostoja WORK_DIR:stä, joissa hakutermi esiintyy.
     Samanaikaisuutta rajoitetaan semaforilla (oletuksena 100 rinnakkaista lukua).
     """
     tasks = []
     semaphore = asyncio.Semaphore(100)
     
-    for root, _, filenames in os.walk(BASE_DIR):
+    for root, _, filenames in os.walk(WORK_DIR):
         for filename in filenames:
             file_path = os.path.join(root, filename)
             tasks.append(process_file(file_path, query, semaphore))

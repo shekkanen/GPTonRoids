@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 import subprocess
 import logging
-from api.config import logger, BASE_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key
 
 router = APIRouter()
 
@@ -9,7 +9,7 @@ router = APIRouter()
 def run_api_tests():
     """Runs the API test script."""
     logger.info("Running API tests")
-    script_path = BASE_DIR / "run_api_tests.sh"
+    script_path = WORK_DIR / "run_api_tests.sh"
     if not script_path.exists():
         logger.error("Test script not found")
         raise HTTPException(status_code=404, detail="Test script not found")

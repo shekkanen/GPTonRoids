@@ -8,12 +8,12 @@ client = TestClient(app)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
-    os.environ["API_KEY"] = "test_api_key"
+    os.environ["GPTONROIDS_API_KEY"] = "test_GPTONROIDS_API_KEY"
     yield
-    del os.environ["API_KEY"]
+    del os.environ["GPTONROIDS_API_KEY"]
 
 def test_read_file():
-    client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"x-api-key": "test_api_key"})
-    response = client.get("/files/test.txt", headers={"x-api-key": "test_api_key"})
+    client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
+    response = client.get("/files/test.txt", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert response.json() == "Hello, World!"

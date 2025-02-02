@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from pathlib import Path
-from api.config import logger, BASE_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key
 import aiofiles
 
 router = APIRouter()
@@ -14,7 +14,7 @@ class FileLines(BaseModel):
 
 @router.post("/files/{filename:path}/append", dependencies=[Depends(get_api_key)])
 async def append_to_file(filename: str, file_content: FileContent):
-    file_path = BASE_DIR / filename
+    file_path = WORK_DIR / filename
     try:
         async with aiofiles.open(file_path, "a") as f:
             await f.write(file_content.content)
@@ -25,7 +25,7 @@ async def append_to_file(filename: str, file_content: FileContent):
 
 @router.put("/files/{filename:path}", dependencies=[Depends(get_api_key)])
 async def write_file(filename: str, file_content: FileContent):
-    file_path = BASE_DIR / filename
+    file_path = WORK_DIR / filename
     try:
         async with aiofiles.open(file_path, "w") as f:
             await f.write(file_content.content)
@@ -36,7 +36,7 @@ async def write_file(filename: str, file_content: FileContent):
 
 @router.get("/files/{filename:path}", dependencies=[Depends(get_api_key)])
 async def read_file(filename: str):
-    file_path = BASE_DIR / filename
+    file_path = WORK_DIR / filename
     if not file_path.exists():
         logger.error(f"File not found: {filename}")
         raise HTTPException(status_code=404, detail="File not found")
@@ -50,7 +50,7 @@ async def read_file(filename: str):
 
 @router.delete("/files/{filename:path}", dependencies=[Depends(get_api_key)])
 def delete_file(filename: str):
-    file_path = BASE_DIR / filename
+    file_path = WORK_DIR / filename
     if not file_path.exists():
         logger.error(f"File not found: {filename}")
         raise HTTPException(status_code=404, detail="File not found")
@@ -63,7 +63,7 @@ def delete_file(filename: str):
 
 @router.post("/files/{filename:path}/lines", dependencies=[Depends(get_api_key)])
 async def append_lines_to_file(filename: str, file_lines: FileLines):
-    file_path = BASE_DIR / filename
+    file_path = WORK_DIR / filename
     try:
         async with aiofiles.open(file_path, "a") as f:
             for line in file_lines.lines:

@@ -18,10 +18,10 @@ mock_repo_info = {
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
-    os.environ["API_KEY"] = "test_api_key"
+    os.environ["GPTONROIDS_API_KEY"] = "test_GPTONROIDS_API_KEY"
     os.environ["GITHUB_TOKEN"] = "your-github-token"  # Add GitHub token for testing
     yield
-    del os.environ["API_KEY"]
+    del os.environ["GPTONROIDS_API_KEY"]
     del os.environ["GITHUB_TOKEN"]
 
 @pytest.fixture(scope="function", autouse=True)
@@ -46,41 +46,41 @@ def test_get_github_repo_info():
     response = client.post(
         "/github-repo",
         json={"owner": "octocat", "repo": "Hello-World"},
-        headers={"x-api-key": "test_api_key"}
+        headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"}
     )
     assert response.status_code == 200
     assert response.json() == mock_repo_info
 
 def test_list_files():
-    response = client.get("/directories/", headers={"x-api-key": "test_api_key"})
+    response = client.get("/directories/", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert isinstance(response.json()["files"], list)
 
 def test_write_file():
-    response = client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"x-api-key": "test_api_key"})
+    response = client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert response.json() == {"message": "File written successfully"}
 
 def test_read_file():
-    client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"x-api-key": "test_api_key"})
-    response = client.get("/files/test.txt", headers={"x-api-key": "test_api_key"})
+    client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
+    response = client.get("/files/test.txt", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert response.json() == "Hello, World!"  # Adjusted to parse response JSON
 
 def test_delete_file():
-    client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"x-api-key": "test_api_key"})
-    response = client.delete("/files/test.txt", headers={"x-api-key": "test_api_key"})
+    client.put("/files/test.txt", json={"content": "Hello, World!"}, headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
+    response = client.delete("/files/test.txt", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert response.json() == {"message": "File deleted successfully"}
 
 def test_create_directory():
-    response = client.post("/directories/test_dir", headers={"x-api-key": "test_api_key"})
+    response = client.post("/directories/test_dir", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert response.json() == {"message": "Directory 'test_dir' created successfully"}
 
 def test_delete_directory():
-    client.post("/directories/test_dir", headers={"x-api-key": "test_api_key"})
-    response = client.delete("/directories/test_dir", headers={"x-api-key": "test_api_key"})
+    client.post("/directories/test_dir", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
+    response = client.delete("/directories/test_dir", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert response.json() == {"message": "Directory 'test_dir' deleted successfully"}
 
@@ -88,7 +88,7 @@ def test_run_command():
     response = client.post(
         "/run-command",
         json={"command": "echo Hello", "plan": "testing"},
-        headers={"x-api-key": "test_api_key"}
+        headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"}
     )
     assert response.status_code == 200
     assert response.json()["stdout"] == "Hello"

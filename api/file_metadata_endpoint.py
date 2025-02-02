@@ -3,13 +3,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
 import os
 from datetime import datetime
-from api.config import BASE_DIR, get_api_key, logger
+from api.config import WORK_DIR, get_api_key, logger
 
 router = APIRouter()
 
 @router.get("/file-metadata/{filename:path}", dependencies=[Depends(get_api_key)])
 def get_file_metadata(filename: str):
-    file_path = BASE_DIR / filename
+    file_path = WORK_DIR / filename
     if not file_path.exists():
         logger.error(f"File not found: {filename}")
         raise HTTPException(status_code=404, detail="File not found")

@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 import gzip
 import json
-from api.config import logger, BASE_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ def get_files_for_chat_gpt(
 
     # Collect matching files
     try:
-        for root, dirs, filenames in os.walk(BASE_DIR):
+        for root, dirs, filenames in os.walk(WORK_DIR):
             # Exclude certain directories
             dirs[:] = [d for d in dirs if d not in {"__pycache__", ".pytest_cache__", "venv"}]
             for filename in filenames:
@@ -29,7 +29,7 @@ def get_files_for_chat_gpt(
                         with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
                             file_content = file.read()
                         files_data.append({
-                            "path": os.path.relpath(file_path, BASE_DIR),
+                            "path": os.path.relpath(file_path, WORK_DIR),
                             "content": file_content
                         })
                         logger.debug(f"Successfully processed file: {file_path}")

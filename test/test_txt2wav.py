@@ -9,16 +9,16 @@ client = TestClient(app)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
-    os.environ["API_KEY"] = "test_api_key"
+    os.environ["GPTONROIDS_API_KEY"] = "test_GPTONROIDS_API_KEY"
     yield
-    del os.environ["API_KEY"]
+    del os.environ["GPTONROIDS_API_KEY"]
 
 def test_txt2wav():
     try:
         response = client.post(
             "/txt2wav",
             json={"text": "Hello, World!"},
-            headers={"x-api-key": "test_api_key"},
+            headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"},
             timeout=10  # Timeout after 10 seconds
         )
         assert response.status_code == 200

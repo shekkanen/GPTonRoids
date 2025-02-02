@@ -16,7 +16,7 @@ class AnalyzeFileRequest(BaseModel):
 def analyze_file(request: AnalyzeFileRequest):
     logger.info(f"Analyzing file: {request.filename}, type: {request.analysis_type}")
     try:
-        file_path = BASE_DIR / request.filename
+        file_path = WORK_DIR / request.filename
         if not file_path.exists():
             logger.error(f"File not found: {request.filename}")
             raise HTTPException(status_code=404, detail="File not found")

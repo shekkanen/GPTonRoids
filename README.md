@@ -8,6 +8,7 @@ GPTonRoids is a powerful and flexible application that bridges the capabilities 
 - [Setup](#setup)
 - [Usage](#usage)
 - [API Documentation](#api-documentation)
+- [Environment Variables](#environment-variables)
 - [Security](#security)
 - [Testing](#testing)
 - [Contributing](#contributing)
@@ -25,6 +26,7 @@ GPTonRoids offers a comprehensive set of features that allow users to interact w
 
 ### Command Execution:
 - Run predefined safe commands (e.g., `ls`, `pwd`, `echo`) with a secure whitelist mechanism.
+
 
 ### GitHub Integration:
 - Fetch repository information and issues.
@@ -67,46 +69,71 @@ GPTonRoids leverages GPT Actions, a feature that allows ChatGPT to perform API c
    ```bash
    git clone https://github.com/yourusername/GPTonRoids.git
    cd GPTonRoids
-   ```
+Use code with caution.
+Markdown
+Create and Activate Virtual Environment:
 
-2. **Create and Activate Virtual Environment:**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+python3 -m venv venv
+source venv/bin/activate
+Use code with caution.
+Bash
+Install Dependencies:
 
-3. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+pip install -r requirements.txt
+Use code with caution.
+Bash
+Configure Environment Variables using .env file:
 
-4. **Configure Environment Variables:**
+Copy the example environment file and update the necessary variables.
 
-   Copy the example environment file and update the necessary variables.
-   ```bash
-   cp .env.example .env
-   ```
-   Edit the `.env` file to set `API_KEY`, `GITHUB_TOKEN`, and other required variables.
+cp .env.example .env
+Use code with caution.
+Bash
+The .env file should contain the following variables:
 
-5. **Start the Application:**
-   ```bash
-   ./start_all.sh
-   ```
+GPTONROIDS_API_KEY: Your API key for securing the GPTonRoids API. Important: Keep this key secret.
 
-6. **Run Tests:**
-   ```bash
-   pytest
-   ```
+GITHUB_TOKEN: Your personal GitHub access token. Required for GitHub integration features. Ensure it has the necessary permissions for the actions you intend to perform (e.g., read repository info, create issues).
 
-## API Documentation
+WORK_DIR (Optional): The main working directory for GPTonRoids. If not set or left empty, it defaults to <project_root>/work. You can customize this to point to a different location if needed.
 
-Once the server is running, navigate to `/docs` to access the interactive API documentation provided by FastAPI's Swagger UI.
+Example .env file:
 
-## Security Recommendations
+GPTONROIDS_API_KEY=your_secret_api_key_here
+GITHUB_TOKEN=your_github_personal_access_token_here
+WORK_DIR=/path/to/your/custom/work_dir  # Optional, uncomment and customize if needed
+Use code with caution.
+Edit the .env file to set GPTONROIDS_API_KEY, GITHUB_TOKEN, and other required variables.
 
-- **Protect Your API Key:** Ensure that the `API_KEY` is kept secret and not exposed in version control systems.
-- **Limit GitHub Token Permissions:** The `GITHUB_TOKEN` should have the minimal required permissions to perform necessary actions.
+Start the Application:
 
-## License
+./start_all.sh
+Use code with caution.
+Bash
+Run Tests:
 
+pytest
+Use code with caution.
+Bash
+Environment Variables
+GPTonRoids uses environment variables for configuration, managed through a .env file for ease of setup and security. See the "Setup" section for details on configuring these variables.
+
+API Documentation
+Once the server is running, navigate to /docs to access the interactive API documentation provided by FastAPI's Swagger UI.
+
+Security Recommendations
+Protect Your API Key: Ensure that the GPTONROIDS_API_KEY is kept secret and not exposed in version control systems.
+
+Limit GitHub Token Permissions: The GITHUB_TOKEN should have the minimal required permissions to perform necessary actions.
+
+License
 MIT
+
+Use code with caution.
+.env.example
+
+Use code with caution.
+GPTONROIDS_API_KEY=your_secret_api_key_here
+GITHUB_TOKEN=your_github_personal_access_token_here
+
+WORK_DIR=/path/to/your/custom/work_dir # Optional, uncomment and customize if needed

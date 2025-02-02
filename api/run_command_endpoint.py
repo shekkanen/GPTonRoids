@@ -5,7 +5,7 @@ import shlex
 import shutil
 import traceback
 import os
-from api.config import logger, BASE_DIR, get_api_key
+from api.config import logger, WORK_DIR, get_api_key
 
 router = APIRouter()
 
@@ -36,14 +36,14 @@ async def run_command(request: RunCommandRequest):
             logger.warning(f"Blocked unauthorized command: {cmd}")
             raise HTTPException(status_code=403, detail=f"Command '{cmd}' is not allowed.")
 
-        base_dir_abs = os.path.abspath(BASE_DIR)
+        WORK_DIR_abs = os.path.abspath(WORK_DIR)
         cmd_path = None
 
         if '/' in cmd:
-            # Käsitellään polkuna suhteessa BASE_DIR:iin
-            full_path = os.path.abspath(os.path.join(BASE_DIR, cmd))
-            # Estetään directory traversal BASE_DIR:n ulkopuolelle
-            if not (full_path == base_dir_abs or full_path.startswith(base_dir_abs + os.sep)):
+            # Käsitellään polkuna suhteessa WORK_DIR:iin
+            full_path = os.path.abspath(os.path.join(WORK_DIR, cmd))
+            # Estetään directory traversal WORK_DIR:n ulkopuolelle
+            if not (full_path == WORK_DIR_abs or full_path.startswith(WORK_DIR_abs + os.sep)):
                 logger.warning(f"Blocked path traversal attempt: {cmd}")
                 raise HTTPException(status_code=403, detail="Path traversal not allowed.")
             if not os.path.isfile(full_path):
@@ -81,7 +81,7 @@ async def run_command(request: RunCommandRequest):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=BASE_DIR,
+            cwd=WORK_DIR,
             timeout=55
         )
 

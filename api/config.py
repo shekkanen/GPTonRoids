@@ -5,17 +5,23 @@ from pydantic import BaseModel
 from fastapi import Depends, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Base directory setup
-#BASE_DIR = Path(__file__).resolve().parent.parent
-#BASE_DIR = Path(BASE_DIR) / "work"
-BASE_DIR = Path('/home/sami/sorsat/aakkohassekka')
+work_dir_env = os.getenv("WORK_DIR")
+if work_dir_env and work_dir_env.strip():
+    WORK_DIR = Path(work_dir_env)
+else:
+    WORK_DIR = Path(__file__).resolve().parent.parent / "work"
+
 
 # Temporary directory setup
-TMP_DIR = BASE_DIR / "tmp"
+TMP_DIR = WORK_DIR / "tmp"
 TMP_DIR.mkdir(parents=True, exist_ok=True)
 
 # Logs directory setup
-LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR = WORK_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Logger setup
@@ -29,23 +35,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger("server")
 
-api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
+GPTONROIDS_API_KEY_header = APIKeyHeader(name="GPTONROIDS_API_KEY", auto_error=False)
 
 # Function to get API key
-def get_api_key(x_api_key: str = Depends(api_key_header)):
-    expected_key = os.getenv("API_KEY")
+def get_api_key(x_GPTONROIDS_API_KEY: str = Depends(GPTONROIDS_API_KEY_header)):
+    expected_key = os.getenv("GPTONROIDS_API_KEY")
     if not expected_key:
-        # If the server itself doesn't have an API_KEY set
+        # If the server itself doesn't have an GPTONROIDS_API_KEY set
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="API_KEY environment variable is not set on the server"
+            detail="GPTONROIDS_API_KEY environment variable is not set on the server"
         )
 
-    # Check the client’s x-api-key vs the server’s
-    if not x_api_key or x_api_key != expected_key:
+    # Check the client’s GPTONROIDS_API_KEY vs the server’s
+    if not x_GPTONROIDS_API_KEY or x_GPTONROIDS_API_KEY != expected_key:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid or missing x-api-key"
+            detail="Invalid or missing GPTONROIDS_API_KEY"
         )
 
-    return x_api_key
+    return x_GPTONROIDS_API_KEY

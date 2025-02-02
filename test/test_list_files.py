@@ -8,11 +8,11 @@ client = TestClient(app)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
-    os.environ["API_KEY"] = "test_api_key"
+    os.environ["GPTONROIDS_API_KEY"] = "test_GPTONROIDS_API_KEY"
     yield
-    del os.environ["API_KEY"]
+    del os.environ["GPTONROIDS_API_KEY"]
 
 def test_list_files():
-    response = client.get("/directories/", headers={"x-api-key": "test_api_key"})
+    response = client.get("/directories/", headers={"GPTONROIDS_API_KEY": "test_GPTONROIDS_API_KEY"})
     assert response.status_code == 200
     assert isinstance(response.json()["files"], list)
